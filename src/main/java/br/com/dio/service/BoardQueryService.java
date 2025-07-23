@@ -29,8 +29,4 @@ public class BoardQueryService {
         return Optional.empty();
     }
 
-    public List<BoardColumnEntity> findByBoardId(final Long id) throws SQLException{
-        return null;
-    }
-
 }
