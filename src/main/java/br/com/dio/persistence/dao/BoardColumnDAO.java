@@ -31,23 +31,35 @@ public class BoardColumnDAO {
             return  entity;
         }
     }
-    public List<BoardColumnEntity> findByBoardId(final Long id) throws SQLException{
-        List<BoardColumnEntity> entities = new ArrayList<>();
-        var sql = "SELECT id, name, `order`, kind FROM BOARDS_COLUMNS WHERE board_id = ? ORDER BY `order`";
+    public List<BoardColumnEntity> findByBoardIdWithDetails(final Long id) throws SQLException{
+        List<BoardColumnEntity> dtos = new ArrayList<>();
+        var sql =
+                """
+                SELECT bc.id,
+                       bc.name,
+                       bc.kind,
+                       COUNT (SELECT c.id
+                              FROM CARDS c 
+                              WHERE c.Bboard_column_id = bc.id) cards_amount 
+                  FROM BOARDS_COLUMNS bc
+                  WHERE board_id = ? 
+                  ORDER BY `order`
+                """;
         try(var statement = connection.prepareStatement(sql)){
             statement.setLong(1, id);
             statement.executeQuery();
             var resultSet = statement.getResultSet();
             while (resultSet.next()){
-                var entity = new BoardColumnEntity();
-                entity.setId(resultSet.getLong("id"));
-                entity.setName(resultSet.getString("name"));
-                entity.setOrder(resultSet.getInt("order"));
-                entity.setKind(findByName(resultSet.getString("kind")));
-                entities.add(entity);
+                var dto = new BoardColumnDTO(
+                        resultSet.getLong("id"),
+                        resultSet.getString("name"),
+                        findByName(resultSet.getString("kind")),
+                        resultSet.getInt("cards_amount")
+                );
+                dtos.add(dto);
 
             }
-            return entities;
+            return dtos;
         }
     }
 
