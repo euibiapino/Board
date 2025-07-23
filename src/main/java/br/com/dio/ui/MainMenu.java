@@ -22,13 +22,13 @@ public class MainMenu {
     public void execute() throws SQLException {
         System.out.println("Bem vindo ao gerenciador de boards, escolha a opcão desejada:");
         var option = -1;
-        while (true){
+        while (true) {
             System.out.println("1 - Criar um novo board");
-            System.out.println("2 - Excluir um board existente");
+            System.out.println("2 - Selecionar um board existente");
             System.out.println("3 - Excluir um board");
             System.out.println("4 - Sair");
             option = scanner.nextInt();
-            switch(option){
+            switch (option) {
                 case 1 -> createBoard();
                 case 2 -> selectBoard();
                 case 3 -> deleteBoard();
@@ -68,12 +68,12 @@ public class MainMenu {
 
         System.out.println("Inform o nome da coluna final de cancelamento do board: ");
         var cancelColumnName = scanner.next();
-        var cancelColumn = createColumn(cancelColumnName, CANCEL, additionalColumns + 1);
+        var cancelColumn = createColumn(cancelColumnName, CANCEL, additionalColumns + 2);
         columns.add(cancelColumn);
 
 
         entity.setBoardColumns(columns);
-        try(var connection = getConnection()){
+        try (var connection = getConnection()) {
             var service = new BoardService(connection);
             service.insert(entity);
         }
@@ -83,7 +83,7 @@ public class MainMenu {
     private void selectBoard() throws SQLException {
         System.out.println("Informe o id do board que deseja selecionar: ");
         var id = scanner.nextLong();
-        try(var connection = getConnection()){
+        try (var connection = getConnection()) {
             var queryService = new BoardQueryService(connection);
             var optional = queryService.findById(id);
             optional.ifPresentOrElse(b ->
@@ -91,25 +91,25 @@ public class MainMenu {
                     System.out.printf("Não foi encontrado um board com o id %s.\n", id));
         }
     }
-    }
 
     private void deleteBoard() throws SQLException {
         System.out.println("Informe o id do board que será excluído: ");
         var id = scanner.nextLong();
-        try(var connection = getConnection()){
+        try (var connection = getConnection()) {
             var service = new BoardService(connection);
-            if (service.delete(id)){
-                System.out.printf("O board %s foi excluído.\n", n);
+            if (service.delete(id)) {
+                System.out.printf("O board %s foi excluído.\n", id);
             } else {
                 System.out.printf("Não foi encontrado um board com o id %s.\n", id);
             }
         }
     }
 
-    private BoardColumnEntity createColumn(final String name, final BoardColumnKindEnum kind, final int order){
-        var boardColumn = new BoardEntity();
+    private BoardColumnEntity createColumn(final String name, final BoardColumnKindEnum kind, final int order) {
+        var boardColumn = new BoardColumnEntity();
         boardColumn.setName(name);
         boardColumn.setKind(kind);
         boardColumn.setOrder(order);
         return boardColumn;
     }
+}
