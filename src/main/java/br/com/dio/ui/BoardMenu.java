@@ -1,13 +1,16 @@
 package br.com.dio.ui;
 
+import br.com.dio.persistence.entity.BoardColumnEntity;
 import br.com.dio.persistence.entity.BoardEntity;
-import br.com.dio.service.BoardService;
+import br.com.dio.persistence.entity.CardEntity;
+import br.com.dio.service.*;
 import lombok.AllArgsConstructor;
 
 import java.sql.SQLException;
 import java.util.Scanner;
 
 import static br.com.dio.persistence.config.ConnectionConfig.getConnection;
+import static br.com.dio.persistence.entity.BoardColumnKindEnum.INITIAL;
 
 @AllArgsConstructor
 public class BoardMenu {
@@ -17,7 +20,7 @@ public class BoardMenu {
 
     public void execute() {
         try {
-            System.out.println("Bem-vindo ao board %s, selecione a operação desejada", entity.getId());
+            System.out.printf("Bem-vindo ao board %s, selecione a operação desejada\n", entity.getId());
             var option = -1;
             while (option != 9) {
                 System.out.println("1 - Criar um card");
@@ -41,7 +44,6 @@ public class BoardMenu {
                     case 7 -> showColumn();
                     case 8 -> showCard();
                     case 9 -> System.out.println("Voltando para o menu anterior");
-                    ;
                     case 10 -> System.exit(0);
                     default -> System.out.println("Opção inválida, informe uma opção do menu.");
                 }
@@ -52,7 +54,16 @@ public class BoardMenu {
         }
     }
 
-    private void createCard() {
+    private void createCard() throws SQLException{
+        var card = new CardEntity();
+        System.out.println("Informe o título do card");
+        card.setTitle(scanner.next());
+        System.out.println("Informe a descrição do card");
+        card.setDescription(scanner.next());
+        card.setBoardColumn(entity.getInitialColumn());
+        try(var connection = getConnection()){
+            new CardService(connection).insert(card);
+        }
     }
 
     private void moveCardToNextColmun() {
@@ -69,20 +80,51 @@ public class BoardMenu {
 
     private void showBoard() throws SQLException {
         try(var connection = getConnection()){
-            var optional = new BoardService(connection).showBaordDetails(entity.getId());
+            var optional = new BoardQueryService(connection).showBoardDetails(entity.getId());
             optional.ifPresent(b -> {
                 System.out.printf("Board [%s,%s]\n", b.id(), b.name());
                 b.columns().forEach(c ->
-                    System.out.printf("Coluna [%s] tipo: [%s] tem %s cards.\n", c.name(), c.kind(), c.cardsAmount())
+                        System.out.printf("Coluna [%s] tipo: [%s] tem %s cards\n", c.name(), c.kind(), c.cardsAmount())
                 );
             });
         }
     }
 
-    private void showColumn() {
+    private void showColumn() throws SQLException {
+        System.out.printf("Escolha uma coluna do board %s\n: ", entity.getName());
+        var columnsIds = entity.getBoardColumns().stream().map(BoardColumnEntity::getId).toList();
+        var selectedColumn = -1L;
+        while (!columnsIds.contains(selectedColumn)){
+            entity.getBoardColumns().forEach(c -> System.out.printf("%s - %s [%s]\n", c.getId(), c.getName(), c.getKind()));
+            selectedColumn = scanner.nextLong();
+        }
+        try(var connection= getConnection()){
+            var column = new BoardColumnQueryService(connection).findById(selectedColumn);
+            column.ifPresent(co -> {
+                System.out.printf("Coluna %s tipo %s\n", co.getName(), co.getKind());
+                co.getCards().forEach(ca -> System.out.printf("Card %s - %s\nDescrição: %s",
+                        ca.getId(), ca.getTitle(), ca.getDescription()));
+            });
+        }
     }
 
-    private void showCard() {
+    private void showCard() throws SQLException {
+        System.out.println("Informe o id do card que deseja visualizar");
+        var selectedCardId = scanner.nextLong();
+        try(var connection = getConnection()){
+            new CardQueryService(connection).findById(selectedCardId)
+                    .ifPresentOrElse(
+                     c -> {
+                         System.out.printf("Card %s - %s.\n", c.Id(), c.title());
+                         System.out.printf("Descrição: %s.\n", c.description());
+                         System.out.println(c.blocked() ?
+                                 "Está bloqueado. Motivo: %s." + c.blockReason :
+                                 "Não está bloqueado.");
+                         System.out.printf("Já foi bloqueado %s vezes.\n", c.blocksAmount());
+                         System.out.printf("Esrá no momento na coluna %s - %s.", c.columnId(), c.columnName());
+                    },
+                    () -> System.out.printf("Não existe um card com o id %s.\n", selectedCardId));
+        }
     }
 }
 
