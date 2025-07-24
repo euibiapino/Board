@@ -102,7 +102,7 @@ public class BoardMenu {
             var column = new BoardColumnQueryService(connection).findById(selectedColumn);
             column.ifPresent(co -> {
                 System.out.printf("Coluna %s tipo %s\n", co.getName(), co.getKind());
-                co.getCards().forEach(ca -> System.out.printf("Card %s - %s\nDescrição: %s",
+                co.getCards().forEach(ca -> System.out.printf("Card %s - %s\nDescrição: %s\n",
                         ca.getId(), ca.getTitle(), ca.getDescription()));
             });
         }
@@ -111,19 +111,19 @@ public class BoardMenu {
     private void showCard() throws SQLException {
         System.out.println("Informe o id do card que deseja visualizar");
         var selectedCardId = scanner.nextLong();
-        try(var connection = getConnection()){
+        try(var connection  = getConnection()){
             new CardQueryService(connection).findById(selectedCardId)
                     .ifPresentOrElse(
-                     c -> {
-                         System.out.printf("Card %s - %s.\n", c.Id(), c.title());
-                         System.out.printf("Descrição: %s.\n", c.description());
-                         System.out.println(c.blocked() ?
-                                 "Está bloqueado. Motivo: %s." + c.blockReason :
-                                 "Não está bloqueado.");
-                         System.out.printf("Já foi bloqueado %s vezes.\n", c.blocksAmount());
-                         System.out.printf("Esrá no momento na coluna %s - %s.", c.columnId(), c.columnName());
-                    },
-                    () -> System.out.printf("Não existe um card com o id %s.\n", selectedCardId));
+                            c -> {
+                                System.out.printf("Card %s - %s.\n", c.id(), c.title());
+                                System.out.printf("Descrição: %s\n", c.description());
+                                System.out.println(c.blocked() ?
+                                        "Está bloqueado. Motivo: " + c.blockReason() :
+                                        "Não está bloqueado");
+                                System.out.printf("Já foi bloqueado %s vezes\n", c.blocksAmount());
+                                System.out.printf("Está no momento na coluna %s - %s\n", c.columnId(), c.columnName());
+                            },
+                            () -> System.out.printf("Não existe um card com o id %s\n", selectedCardId));
         }
     }
 }
