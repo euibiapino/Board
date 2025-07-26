@@ -37,7 +37,7 @@ public class BoardMenu {
                 option = scanner.nextInt();
                 switch (option) {
                     case 1 -> createCard();
-                    case 2 -> moveCardToNextColmun();
+                    case 2 -> moveCardToNextColumn();
                     case 3 -> blockCard();
                     case 4 -> unblockCard();
                     case 5 -> cancelCard();
@@ -67,7 +67,7 @@ public class BoardMenu {
         }
     }
 
-    private void moveCardToNextColmun() throws SQLException {
+    private void moveCardToNextColumn() throws SQLException {
         System.out.println("Informe o id do card que deseja mover para a próxima coluna:");
         var cardId = scanner.nextLong();
         var boardColumnsInfo = entity.getBoardColumns().stream()
@@ -90,10 +90,22 @@ public class BoardMenu {
                 .toList();
         try(var connection = getConnection()){
             new CardService(connection).block(cardId, reason, boardColumnsInfo);
+        } catch (RuntimeException ex){
+            System.out.println(ex.getMessage());
         }
     }
 
     private void unblockCard() throws SQLException {
+        System.out.println("Informe o id do card que será desbloqueado: ");
+        var cardId = scanner.nextLong();
+        System.out.println("Informe o motivo do desbloqueio do card: ");
+        var reason = scanner.next();
+        try(var connection = getConnection()){
+            new CardService(connection).unblock(cardId, reason);
+        } catch (RuntimeException ex){
+            System.out.println(ex.getMessage());
+        }
+
     }
 
     private void cancelCard() throws SQLException {
